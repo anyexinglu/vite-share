@@ -7,6 +7,7 @@
     "express": "^4.17.1"
   },
   "devDependencies": {
+    "esbuild": "^0.12.20",
     "nodemon": "^2.0.12"
   }
 }
