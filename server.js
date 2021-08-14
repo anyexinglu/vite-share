@@ -31,7 +31,7 @@ app.get("*", async function (req, res) {
     // 第三方库
     let depName = url.replace("/@modules/", "");
     let filePath;
-    if (depName === "react" || depName === "react-dom") {
+    if (["react", "react-dom", "react-refresh"].includes(depName)) {
       filePath = path.join(__dirname, "backup", `${depName}.js`);
     } else {
       let depRoot = path.join(__dirname, "node_modules", depName);
@@ -81,9 +81,14 @@ app.get("*", async function (req, res) {
 });
 
 async function transformJsx(content) {
-  let result = await transform(content, {
+  let params = {
     loader: "jsx",
-  });
+    sourcemap: true,
+  };
+  if (content.includes("hello react")) {
+    params.sourcefile = "/Users/yangxiayan/Documents/App/src/App.jsx";
+  }
+  let result = await transform(content, params);
   // console.log("...result", result);
 
   return result.code;
@@ -110,7 +115,7 @@ watcher.on("change", async file => {
     updates: [
       {
         type: "js-update",
-        timestamp: 1626663172873,
+        timestamp: new Date().getTime(),
         path: "/src/App.jsx",
         acceptedPath: "/src/App.jsx",
       },
