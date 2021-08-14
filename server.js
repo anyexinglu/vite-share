@@ -2,12 +2,21 @@ import express from "express";
 import fs from "fs";
 import path from "path";
 import { transform } from "esbuild";
+import { watch as chokidarWatch } from "chokidar";
 
 import { fileURLToPath } from "url";
+import { createWebSocketServer } from "./ws.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+const watcher = chokidarWatch(__dirname, {
+  ignored: ["**/node_modules/**", "**/.git/**"],
+  ignoreInitial: true,
+  ignorePermissionErrors: true,
+  disableGlobbing: true,
+});
 
 app.get("*", async function (req, res) {
   const { url } = req;
@@ -21,13 +30,20 @@ app.get("*", async function (req, res) {
   } else if (url.startsWith("/@modules/")) {
     // 第三方库
     let depName = url.replace("/@modules/", "");
-    let depRoot = path.join(__dirname, "node_modules", depName);
-    console.log("...depRoot", depRoot, depRoot + "/package.json");
-    let depPkg = JSON.parse(
-      fs.readFileSync(depRoot + "/package.json", "utf-8")
-    );
-    let module = depPkg.module;
-    let moduleContent = fs.readFileSync(path.join(depRoot, module));
+    let filePath;
+    if (depName === "react" || depName === "react-dom") {
+      filePath = path.join(__dirname, "backup", `${depName}.js`);
+    } else {
+      let depRoot = path.join(__dirname, "node_modules", depName);
+      console.log("...depRoot", depRoot, depRoot + "/package.json");
+      let depPkg = JSON.parse(
+        fs.readFileSync(depRoot + "/package.json", "utf-8")
+      );
+      let module = depPkg.module;
+      console.log("...path.join(depRoot, module)", path.join(depRoot, module));
+      filePath = path.join(depRoot, module);
+    }
+    let moduleContent = fs.readFileSync(filePath);
     // console.log("...depPkg", depPkg, moduleContent);
     res
       .status(200)
@@ -83,4 +99,21 @@ function rewriteDepImport(code) {
   });
 }
 
-app.listen(3100);
+let servingApp = app.listen(3100);
+
+const ws = createWebSocketServer(servingApp);
+
+watcher.on("change", async file => {
+  console.log("...change", file);
+  ws.send({
+    type: "update",
+    updates: [
+      {
+        type: "js-update",
+        timestamp: 1626663172873,
+        path: "/src/App.jsx",
+        acceptedPath: "/src/App.jsx",
+      },
+    ],
+  });
+});
