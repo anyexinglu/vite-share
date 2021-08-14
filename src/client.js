@@ -52,8 +52,13 @@ async function handleMessage(payload) {
       console.log("...will update view");
       // window.location.reload();
       // return;
-      payload.updates.forEach(update => {
+      payload.updates.forEach(async update => {
         console.log("...queueUpdate(fetchUpdate(update));", update);
+        const { timestamp, path } = update;
+        await import(
+          /* @vite-ignore */
+          `/App?import&t=${timestamp}`
+        );
         // queueUpdate(fetchUpdate(update));
       });
 

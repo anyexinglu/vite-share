@@ -51,7 +51,7 @@ app.get("*", async function (req, res) {
       .end(moduleContent);
   } else if (!url.includes(".")) {
     // js / jsx 文件
-    let fileName = url.slice(1);
+    let fileName = url.slice(1).split("?")[0];
     let content;
     let filePath = path.join(__dirname, "src", fileName);
     if (!fileName.includes(".")) {
