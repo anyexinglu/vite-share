@@ -1,4 +1,4 @@
-import { WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from "ws";
 
 const HMR_HEADER = "saber-hmr";
 
